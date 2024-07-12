@@ -67,6 +67,8 @@ config/
 *.yaml
 logs/
 *.log
+data/
+*.db
 
 # IDEs
 .vscode/

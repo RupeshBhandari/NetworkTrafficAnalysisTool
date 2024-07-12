@@ -45,7 +45,7 @@ def main():
 
             # Analyze the captured traffic
             logging.info("Analyzing captured traffic...")
-            analysis_report = traffic_analyzer.analyze_traffic(interface_name)
+            analysis_report = traffic_analyzer.analyze_traffic()
 
             # Display analysis report
             logging.info("Traffic Analysis Report:")
@@ -53,7 +53,7 @@ def main():
 
             # Visualize the traffic data
             logging.info("Visualizing traffic data...")
-            traffic_analyzer.visualize_traffic(interface_name)
+            traffic_analyzer.visualize_traffic()
 
             # Sleep before next capture
             logging.info(f"Sleeping for {capture_duration} seconds before next capture.")

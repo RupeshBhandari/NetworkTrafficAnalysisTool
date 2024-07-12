@@ -1,4 +1,6 @@
+import sqlite3
 import pandas as pd
+import os
 from typing import Dict
 import matplotlib.pyplot as plt
 from capture.network_interface import NetworkInterface
@@ -6,6 +8,28 @@ from capture.network_interface import NetworkInterface
 class TrafficAnalyzer:
     def __init__(self):
         self.network_interfaces: Dict[str, NetworkInterface] = {}
+        self.db_path = os.path.join('data', 'traffic_data.db')
+
+        # Initialize SQLite database and table
+        self._initialize_database()
+
+    def _initialize_database(self):
+        # Create a SQLite connection and cursor
+        self.conn = sqlite3.connect(self.db_path)
+        self.cursor = self.conn.cursor()
+
+        # Create a table if it doesn't exist
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS packets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT,
+                source_ip TEXT,
+                destination_ip TEXT,
+                protocol TEXT,
+                size INTEGER
+            )
+        ''')
+        self.conn.commit()
 
     def add_interface(self, name: str):
         interface = NetworkInterface(name)
@@ -14,16 +38,25 @@ class TrafficAnalyzer:
     def start_capture(self, interface_name: str, duration: int):
         if interface_name in self.network_interfaces:
             self.network_interfaces[interface_name].start_capture(duration)
+            self.store_data(interface_name)
         else:
             raise ValueError("Interface not found")
 
-    def analyze_traffic(self, interface_name: str) -> str:
+    def store_data(self, interface_name: str):
         if interface_name not in self.network_interfaces:
             raise ValueError("Interface not found")
 
         interface = self.network_interfaces[interface_name]
         packets = interface.get_packets()
         raw_df = pd.DataFrame([vars(pkt) for pkt in packets])
+
+        # Store data in SQLite
+        raw_df.to_sql('packets', self.conn, if_exists='append', index=False)
+
+    def analyze_traffic(self) -> str:
+        # Fetch data from SQLite for analysis
+        query = "SELECT * FROM packets"
+        raw_df = pd.read_sql(query, self.conn)
 
         if raw_df.empty:
             return "# Traffic Analysis Report\n\nNo data captured.\n"
@@ -61,13 +94,10 @@ class TrafficAnalyzer:
 
         return markdown_report
 
-    def visualize_traffic(self, interface_name: str):
-        if interface_name not in self.network_interfaces:
-            raise ValueError("Interface not found")
-
-        interface = self.network_interfaces[interface_name]
-        packets = interface.get_packets()
-        raw_df = pd.DataFrame([vars(pkt) for pkt in packets])
+    def visualize_traffic(self):
+        # Fetch data from SQLite for visualization
+        query = "SELECT * FROM packets"
+        raw_df = pd.read_sql(query, self.conn)
 
         if raw_df.empty:
             print("No data to visualize.")
@@ -102,3 +132,7 @@ class TrafficAnalyzer:
 
         plt.tight_layout()
         plt.show()
+
+    def __del__(self):
+        # Close the SQLite connection when the object is destroyed
+        self.conn.close()
