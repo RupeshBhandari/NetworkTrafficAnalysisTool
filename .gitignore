@@ -62,7 +62,9 @@ ENV/
 env.bak/
 venv.bak/
 
-# Logs
+# Logs and config
+config/
+*.yaml
 logs/
 *.log
 

@@ -1,16 +1,32 @@
 import time
+import yaml
 import logging
 from capture.network_interface import NetworkInterface
 from analysis.traffic_analyzer import TrafficAnalyzer
 
-# Configure logging
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s',
-                    handlers=[logging.FileHandler("logs/app.log")])
+# Function to load configuration from config.yaml
+def load_config(file_path):
+    with open(file_path, 'r') as file:
+        config = yaml.safe_load(file)
+    return config
+
+# Function to initialize logging
+def setup_logging(log_file):
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s - %(levelname)s - %(message)s',
+                        handlers=[logging.FileHandler("logs/app.log")])
 
 def main():
-    interface_name = "Wi-Fi"  # Replace with the actual name of your network interface
-    capture_duration = 20  # Duration to capture packets in seconds
+    # Load configuration from config.yaml
+    config = load_config('config/config.yaml')
+    interface_name = config['network_interface']['name']
+    capture_duration = config['network_interface']['capture_duration']
+    packet_filter = config['network_interface']['packet_filter']
+    log_file_path = config['logging']['file_path']
+
+    # Setup logging
+    setup_logging(log_file_path)
+    logging.info(f"Starting packet capture on interface: {interface_name}")
 
     # Initialize Network Interface and Traffic Analyzer
     logging.info("Initializing network interface and traffic analyzer.")
